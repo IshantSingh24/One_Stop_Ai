@@ -14,15 +14,15 @@ def load_config():
         with open(config_path, 'r') as f:
             return json.load(f)
     except FileNotFoundError:
-        print(f"❌ Configuration file {config_path} not found!")
+        print(f"  Configuration file {config_path} not found!")
         return None
     except json.JSONDecodeError as e:
-        print(f"❌ Invalid JSON in {config_path}: {e}")
+        print(f"  Invalid JSON in {config_path}: {e}")
         return None
 
 config = load_config()
 if not config:
-    print("❌ Cannot continue without valid configuration")
+    print("  Cannot continue without valid configuration")
     exit(1)
 
 SLACK_BOT_TOKEN = config['slack']['bot_token']
@@ -52,10 +52,10 @@ class SimpleSlackMonitor:
         try:
             response = client.auth_test()
             bot_id = response.get('user_id')
-            print(f"🤖 Bot User ID: {bot_id}")
+            print(f" Bot User ID: {bot_id}")
             return bot_id
         except SlackApiError as e:
-            print(f"❌ Error getting bot user ID: {e}")
+            print(f"  Error getting bot user ID: {e}")
             return None
         
     def load_existing_data(self):
@@ -89,7 +89,7 @@ class SimpleSlackMonitor:
             
             return True
         except Exception as e:
-            print(f"❌ Error saving to logging: {e}")
+            print(f"  Error saving to logging: {e}")
             return False
     
     def save_to_json(self, data):
@@ -102,10 +102,10 @@ class SimpleSlackMonitor:
             with open(JSON_FILE, 'w', encoding='utf-8') as f:
                 json.dump(existing_data, f, indent=2, ensure_ascii=False)
             
-            print(f"✅ Data saved to {JSON_FILE}")
+            print(f" Data saved to {JSON_FILE}")
             return True
         except Exception as e:
-            print(f"❌ Error saving to JSON: {e}")
+            print(f"  Error saving to JSON: {e}")
             return False
     
     def get_user_info(self, user_id):
@@ -129,16 +129,16 @@ class SimpleSlackMonitor:
             print(f"🔄 Attempting to download: {file_name} ({file_size} bytes)")
             
             if file_size > MAX_FILE_SIZE:
-                print(f"⚠️ File {file_name} is too large ({file_size} bytes > {MAX_FILE_SIZE} bytes)")
+                print(f"  File {file_name} is too large ({file_size} bytes > {MAX_FILE_SIZE} bytes)")
                 return None
             
             _, ext = os.path.splitext(file_name)
             if ext.lower() not in SUPPORTED_EXTENSIONS:
-                print(f"⚠️ File {file_name} has unsupported extension: {ext}")
+                print(f"  File {file_name} has unsupported extension: {ext}")
                 return None
             
             if not file_url:
-                print(f"❌ No download URL available for {file_name}")
+                print(f"  No download URL available for {file_name}")
                 return None
             
             headers = {'Authorization': f'Bearer {SLACK_BOT_TOKEN}'}
@@ -168,12 +168,12 @@ class SimpleSlackMonitor:
                     'file_id': file_id
                 }
             else:
-                print(f"❌ Failed to download {file_name}: HTTP {response.status_code}")
+                print(f"  Failed to download {file_name}: HTTP {response.status_code}")
                 print(f"    Response: {response.text[:200]}...")
                 return None
                 
         except Exception as e:
-            print(f"❌ Error downloading file {file_name}: {e}")
+            print(f"  Error downloading file {file_name}: {e}")
             return None
     
     def process_message_files(self, message):
@@ -247,22 +247,22 @@ class SimpleSlackMonitor:
                     self.save_to_logging(message_data)
                     
                     file_count = len(downloaded_files)
-                    file_info = f" (📁 {file_count} files downloaded)" if file_count > 0 else ""
+                    file_info = f" ( {file_count} files downloaded)" if file_count > 0 else ""
                     user_info = self.get_user_info(message.get('user', ''))
-                    print(f"📝 [{channel}] Logged message from {user_info['display_name']}: {message_data['text_usethisforQueries'][:50]}...{file_info}")
+                    print(f" [{channel}] Logged message from {user_info['display_name']}: {message_data['text_usethisforQueries'][:50]}...{file_info}")
                     
         except Exception as e:
             print(f"Error logging recent messages: {e}")
     
     def check_for_files_in_history(self, limit=50):
         try:
-            print(f"🔍 Checking last {limit} messages per channel for files to download...")
+            print(f" Checking last {limit} messages per channel for files to download...")
             
             total_files_found = 0
             total_files_downloaded = 0
             
             for channel in TARGET_CHANNELS:
-                print(f"📺 Checking channel: {channel}")
+                print(f" Checking channel: {channel}")
                 
                 response = client.conversations_history(
                     channel=channel,
@@ -280,16 +280,16 @@ class SimpleSlackMonitor:
                     files = message.get('files', [])
                     if files:
                         files_found += len(files)
-                        print(f"📁 [{channel}] Found {len(files)} file(s) in message: {message.get('text', '')[:50]}...")
+                        print(f" [{channel}] Found {len(files)} file(s) in message: {message.get('text', '')[:50]}...")
                         
                         downloaded_files = self.process_message_files(message)
                         files_downloaded += len(downloaded_files)
                 
-                print(f"📊 [{channel}] File check: {files_found} files found, {files_downloaded} downloaded")
+                print(f" [{channel}] File check: {files_found} files found, {files_downloaded} downloaded")
                 total_files_found += files_found
                 total_files_downloaded += files_downloaded
             
-            print(f"📊 Total across all channels: {total_files_found} files found, {total_files_downloaded} downloaded")
+            print(f" Total across all channels: {total_files_found} files found, {total_files_downloaded} downloaded")
             return total_files_downloaded > 0
             
         except Exception as e:
@@ -351,7 +351,7 @@ class SimpleSlackMonitor:
                         }
                         
                         self.save_to_json(event_data)
-                        print(f"🎯 [{channel}] {trigger_type} detected: {message_text[:80]}...")
+                        print(f" [{channel}] {trigger_type} detected: {message_text[:80]}...")
                         
         except Exception as e:
             print(f"Error checking messages: {e}")
@@ -364,19 +364,19 @@ class SimpleSlackMonitor:
         self.running = True
         self.thread = threading.Thread(target=self._monitor_loop, daemon=True)
         self.thread.start()
-        print(f"🚀 Started comprehensive Slack monitoring for channels: {', '.join(TARGET_CHANNELS)}")
-        print(f"🤖 Bot User ID: {self.bot_user_id}")
-        print(f"⏱️ Polling interval: {POLL_INTERVAL} seconds")
-        print(f"� Downloads folder: {DOWNLOAD_FOLDER}")
-        print(f"📊 Max file size: {MAX_FILE_SIZE / (1024*1024):.1f} MB")
-        print(f"📄 Supported extensions: {', '.join(SUPPORTED_EXTENSIONS)}")
-        print(f"📋 Comprehensive logging includes:")
+        print(f" Started comprehensive Slack monitoring for channels: {', '.join(TARGET_CHANNELS)}")
+        print(f" Bot User ID: {self.bot_user_id}")
+        print(f" Polling interval: {POLL_INTERVAL} seconds")
+        print(f" Downloads folder: {DOWNLOAD_FOLDER}")
+        print(f" Max file size: {MAX_FILE_SIZE / (1024*1024):.1f} MB")
+        print(f" Supported extensions: {', '.join(SUPPORTED_EXTENSIONS)}")
+        print(f" Comprehensive logging includes:")
         print(f"   - All message metadata and content")
         print(f"   - File downloads (txt, pdf, docx, json, etc.)")
         print(f"   - User information and reactions")
         print(f"   - Thread and reply information")
         print(f"   - Timestamps and permalinks")
-        print(f"📝 Special trigger monitoring:")
+        print(f" Special trigger monitoring:")
         print(f"   - Direct bot mentions (@bot)")
         print(f"   - /aisave commands") 
         print(f"   - Keywords: save this, important, remember this")
@@ -416,7 +416,7 @@ def main():
     monitor = SimpleSlackMonitor()
     
     if not monitor.bot_user_id:
-        print("❌ Cannot start monitoring without valid bot connection")
+        print("Cannot start monitoring without valid bot connection")
         return
     
     print("\n🔍 Checking message history for files to download...")
@@ -433,16 +433,16 @@ def main():
     try:
         monitor.start_monitoring()
         
-        print("\n🎯 Monitor is running and will download files automatically!")
-        print("   📤 Upload a file to the Slack channel to test")
-        print("   📁 Check the slack_downloads/ folder for results")
-        print("   ⏹️ Press Ctrl+C to stop")
+        print("\n Monitor is running and will download files automatically!")
+        print("   Upload a file to the Slack channel to test")
+        print("   Check the slack_downloads/ folder for results")
+        print("   Press Ctrl+C to stop")
         
         while True:
             time.sleep(1)
             
     except KeyboardInterrupt:
-        print("\n⏹️ Shutting down...")
+        print("\n Shutting down...")
         monitor.stop_monitoring()
 
 if __name__ == "__main__":
