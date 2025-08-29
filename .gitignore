@@ -1,1 +1,5 @@
-/.env
+.env
+config.json
+credentials.json
+logging.json
+knowledge_base/

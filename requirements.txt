@@ -1,0 +1,10 @@
+# Core runtime dependencies for One_Stop_Ai
+# Pin loosely to stable major/minor, allow patches
+google-api-python-client>=2.129.0,<3
+google-auth>=2.29.0,<3
+google-auth-httplib2>=0.2.0,<1
+google-auth-oauthlib>=1.2.0,<2
+httplib2>=0.22.0,<1
+slack_sdk>=3.30.0,<4
+requests>=2.31.0,<3
+watchdog>=4.0.0,<5
